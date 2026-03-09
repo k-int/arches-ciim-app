@@ -10,6 +10,7 @@ from arches.app.models.system_settings import settings
 from arches.app.utils.betterJSONSerializer import JSONSerializer
 
 from arches.app.models.resource import Resource
+from arches.app.models.tile import Tile
 from arches_ciim_app.models import LatestResourceEdit
 
 from arches.app.models.models import Concept as modelConcept
@@ -77,6 +78,10 @@ class ChangesView(View):
                 )
             ]
 
+            permitted_nodegroupids = get_nodegroups_by_perm(
+                request.user, "models.read_nodegroup"
+            )
+
             edits = filtered_edits
 
             total_resources = len(edits)
@@ -84,10 +89,10 @@ class ChangesView(View):
             no_pages = math.ceil(total_resources/per_page)
             edits = edits[(page-1)*per_page:page*per_page]
 
-            return (edits, total_resources, no_pages)
+            return (edits, permitted_nodegroupids, no_pages)
 
         @timer
-        def download_data(edits):
+        def download_data(edits, permitted_nodegroupids):
             '''
             Get all data as json
             Returns:
@@ -99,12 +104,13 @@ class ChangesView(View):
                 resourceid=edit.resourceinstanceid
                 if Resource.objects.filter(pk=resourceid).exists():
                     resource = Resource.objects.get(pk=resourceid)
-                    resource.load_tiles()
+                    # Rather than load_tiles(), we fetch tiles separately and check permitted_nodegroups
+                    tile = Tile.objects.filter(resourceinstance_id=resourceid, nodegroup_id__in=permitted_nodegroupids)
+                    resource.tiles.extend(tile)
 
                     if not(len(resource.tiles) == 1 and not resource.tiles[0].data):
                         resource_json= {'modified':edit.timestamp.strftime('%d-%m-%YT%H:%M:%SZ')}
                         resource_json.update(JSONSerializer().serializeToPython(resource))
-
                         data.append(resource_json)
                 else:
                     data.append({'modified':edit.timestamp,'resourceinstance_id':resourceid, 'tiles':None})
@@ -124,8 +130,7 @@ class ChangesView(View):
 
         # Data
         db_data = get_data(from_date, to_date, per_page, page)
-
-        json_data = download_data(db_data[0])
+        json_data = download_data(db_data[0], db_data[1])
 
         end_time = time()
 
@@ -140,7 +145,7 @@ class ChangesView(View):
         metadata = {
             'from': from_date,
             'to': to_date,
-            'totalNumberOfResources': db_data[1],
+            'totalNumberOfResources': len(db_data[0]),
             'perPage': per_page,
             'page': page,
             'numberOfPages': db_data[2],
