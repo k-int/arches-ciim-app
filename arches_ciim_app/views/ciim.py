@@ -16,9 +16,20 @@ from arches.app.models.models import Concept as modelConcept
 from arches.app.models.concept import Concept
 from arches.app.utils.skos import SKOSWriter, SKOSReader
 
+from arches.app.utils.permission_backend import (
+    user_can_read_resource,
+    user_can_edit_resource,
+    user_can_delete_resource,
+    user_can_read_concepts,
+    user_is_resource_reviewer,
+    get_restricted_instances,
+    check_resource_instance_permissions,
+    get_nodegroups_by_perm,
+)
+
 from arches import __version__
 
-#Decorators
+# Decorators
 def timer(func):
     '''
     Description:
@@ -38,10 +49,10 @@ def timer(func):
 class ChangesView(View):
 
     def get(self, request):
-        #Timer start
+        # Timer start
         start_time = time()
 
-        #Functions
+        # Functions
         @timer
         def get_data(from_date, to_date, per_page, page):
             '''
@@ -50,15 +61,26 @@ class ChangesView(View):
             Returns:
             :tuple: Where [0] contains all ID's, [1] total of all ID's, [2] number of pages
             '''
-            #Get all edits within time range
-            edits = LatestResourceEdit.objects.filter(timestamp__range=(from_date, to_date)).order_by('timestamp')
+            # Get all edits within time range
+            edits = (
+                LatestResourceEdit.objects
+                .filter(timestamp__range=(from_date, to_date))
+                .order_by("timestamp")
+                .exclude(resourceinstanceid=settings.SYSTEM_SETTINGS_RESOURCE_ID)
+            )
 
-            #Remove settings changes
-            if settings.SYSTEM_SETTINGS_RESOURCE_ID in [edit.resourceinstanceid for edit in edits]:
-                edits = edits.exclude(resourceinstanceid=settings.SYSTEM_SETTINGS_RESOURCE_ID)
+            # Check resource permissions
+            filtered_edits = [
+                edit for edit in edits
+                if user_can_read_resource(
+                    user=request.user, resourceid=edit.resourceinstanceid
+                )
+            ]
+
+            edits = filtered_edits
 
             total_resources = len(edits)
-            #Paginate results
+            # Paginate results
             no_pages = math.ceil(total_resources/per_page)
             edits = edits[(page-1)*per_page:page*per_page]
 
@@ -87,28 +109,27 @@ class ChangesView(View):
                 else:
                     data.append({'modified':edit.timestamp,'resourceinstance_id':resourceid, 'tiles':None})
 
-
             return (data,)
 
-        #Process input
-        #Dates
+        # Process input
+        # Dates
         from_date = request.GET.get('from')
         to_date = request.GET.get('to')
         from_date = datetime.strptime(from_date, '%d-%m-%YT%H:%M:%SZ')
         to_date = datetime.strptime(to_date, '%d-%m-%YT%H:%M:%SZ')
 
-        #Pages
+        # Pages
         per_page = int(request.GET.get('perPage'))
         page = int(request.GET.get('page'))
 
-        #Data
+        # Data
         db_data = get_data(from_date, to_date, per_page, page)
 
         json_data = download_data(db_data[0])
 
         end_time = time()
 
-        #Dictionaries
+        # Dictionaries
 
         time_elapsed = {
             'total' : db_data[-1]  + json_data[-1],
