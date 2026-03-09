@@ -34,6 +34,8 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        # the last migration in 7.5.x
+        ("models", "9945_file_thumbnail_bin_file_thumbnail_text"),
     ]
 
     operations = [
