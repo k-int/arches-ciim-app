@@ -30,6 +30,7 @@ from arches.app.utils.permission_backend import (
 
 from arches import __version__
 
+
 # Decorators
 def timer(func):
     """
@@ -67,15 +68,15 @@ class ChangesView(View):
             """
             # Get all edits within time range
             edits = (
-                LatestResourceEdit.objects
-                .filter(timestamp__range=(from_date, to_date))
+                LatestResourceEdit.objects.filter(timestamp__range=(from_date, to_date))
                 .order_by("timestamp")
                 .exclude(resourceinstanceid=settings.SYSTEM_SETTINGS_RESOURCE_ID)
             )
 
             # Check resource permissions
             filtered_edits = [
-                edit for edit in edits
+                edit
+                for edit in edits
                 if user_can_read_resource(
                     user=request.user, resourceid=edit.resourceinstanceid
                 )
@@ -89,8 +90,8 @@ class ChangesView(View):
 
             total_resources = len(edits)
             # Paginate results
-            no_pages = math.ceil(total_resources/per_page)
-            edits = edits[(page-1)*per_page:page*per_page]
+            no_pages = math.ceil(total_resources / per_page)
+            edits = edits[(page - 1) * per_page : page * per_page]
 
             return (edits, permitted_nodegroupids, no_pages)
 
@@ -108,28 +109,41 @@ class ChangesView(View):
                 if Resource.objects.filter(pk=resourceid).exists():
                     resource = Resource.objects.get(pk=resourceid)
                     # Rather than load_tiles(), we fetch tiles separately and check permitted_nodegroups
-                    tile = Tile.objects.filter(resourceinstance_id=resourceid, nodegroup_id__in=permitted_nodegroupids)
+                    tile = Tile.objects.filter(
+                        resourceinstance_id=resourceid,
+                        nodegroup_id__in=permitted_nodegroupids,
+                    )
                     resource.tiles.extend(tile)
 
-                    if not(len(resource.tiles) == 1 and not resource.tiles[0].data):
-                        resource_json= {'modified':edit.timestamp.strftime('%d-%m-%YT%H:%M:%SZ')}
-                        resource_json.update(JSONSerializer().serializeToPython(resource))
+                    if not (len(resource.tiles) == 1 and not resource.tiles[0].data):
+                        resource_json = {
+                            "modified": edit.timestamp.strftime("%d-%m-%YT%H:%M:%SZ")
+                        }
+                        resource_json.update(
+                            JSONSerializer().serializeToPython(resource)
+                        )
                         data.append(resource_json)
                 else:
-                    data.append({'modified':edit.timestamp,'resourceinstance_id':resourceid, 'tiles':None})
+                    data.append(
+                        {
+                            "modified": edit.timestamp,
+                            "resourceinstance_id": resourceid,
+                            "tiles": None,
+                        }
+                    )
 
             return (data,)
 
         # Process input
         # Dates
-        from_date = request.GET.get('from')
-        to_date = request.GET.get('to')
-        from_date = datetime.strptime(from_date, '%d-%m-%YT%H:%M:%SZ')
-        to_date = datetime.strptime(to_date, '%d-%m-%YT%H:%M:%SZ')
+        from_date = request.GET.get("from")
+        to_date = request.GET.get("to")
+        from_date = datetime.strptime(from_date, "%d-%m-%YT%H:%M:%SZ")
+        to_date = datetime.strptime(to_date, "%d-%m-%YT%H:%M:%SZ")
 
         # Pages
-        per_page = int(request.GET.get('perPage'))
-        page = int(request.GET.get('page'))
+        per_page = int(request.GET.get("perPage"))
+        page = int(request.GET.get("page"))
 
         # Data
         db_data = get_data(from_date, to_date, per_page, page)
@@ -140,19 +154,19 @@ class ChangesView(View):
         # Dictionaries
 
         time_elapsed = {
-            'total' : db_data[-1]  + json_data[-1],
-            'dbQuery': db_data[-1],
-            'dataDownload': json_data[-1]
-            }
+            "total": db_data[-1] + json_data[-1],
+            "dbQuery": db_data[-1],
+            "dataDownload": json_data[-1],
+        }
 
         metadata = {
-            'from': from_date,
-            'to': to_date,
-            'totalNumberOfResources': len(db_data[0]),
-            'perPage': per_page,
-            'page': page,
-            'numberOfPages': db_data[2],
-            'timeElapsed': time_elapsed
+            "from": from_date,
+            "to": to_date,
+            "totalNumberOfResources": len(db_data[0]),
+            "perPage": per_page,
+            "page": page,
+            "numberOfPages": db_data[2],
+            "timeElapsed": time_elapsed,
         }
 
         response = {"metadata": metadata, "results": json_data[0]}
@@ -170,11 +184,17 @@ class ConceptsExportView(View):
         concept_graphs = []
         for conceptid in conceptids:
             print(conceptid)
-            concept_graphs.append(Concept().get(
-                id=conceptid,
-                include_subconcepts=True,
-                include_parentconcepts=False,
-                include_relatedconcepts=True,
-                depth_limit=None,
-                up_depth_limit=None))
-        return HttpResponse(SKOSWriter().write(concept_graphs, format="pretty-xml"), content_type="application/xml")
+            concept_graphs.append(
+                Concept().get(
+                    id=conceptid,
+                    include_subconcepts=True,
+                    include_parentconcepts=False,
+                    include_relatedconcepts=True,
+                    depth_limit=None,
+                    up_depth_limit=None,
+                )
+            )
+        return HttpResponse(
+            SKOSWriter().write(concept_graphs, format="pretty-xml"),
+            content_type="application/xml",
+        )
