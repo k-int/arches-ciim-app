@@ -4,6 +4,7 @@
 *.djcache
 .vscode/
 node_modules
+arches_ciim_app/settings_local.py
 
 # Packaging
 *.egg-info/
