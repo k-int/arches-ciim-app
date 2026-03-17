@@ -32,20 +32,23 @@ from arches import __version__
 
 # Decorators
 def timer(func):
-    '''
+    """
     Description:
     Times how long a function takes to execute
 
     Returns:
     :tuple: Returns a tuple with the results of a function and the time taken to perform as last element ([-1])
-    '''
+    """
+
     @wraps(func)
     def wrap(*args, **kwargs):
         time_start = time()
-        result = (func(*args, **kwargs))
-        total_time = (time() - time_start,) #Comma at the end makes the result a tuple
-        return result + total_time #Concatinating a tuple
+        result = func(*args, **kwargs)
+        total_time = (time() - time_start,)  # Comma at the end makes the result a tuple
+        return result + total_time  # Concatinating a tuple
+
     return wrap
+
 
 class ChangesView(View):
 
@@ -56,12 +59,12 @@ class ChangesView(View):
         # Functions
         @timer
         def get_data(from_date, to_date, per_page, page):
-            '''
+            """
             Get all edited resources from selected page
 
             Returns:
             :tuple: Where [0] contains all ID's, [1] total of all ID's, [2] number of pages
-            '''
+            """
             # Get all edits within time range
             edits = (
                 LatestResourceEdit.objects
@@ -93,15 +96,15 @@ class ChangesView(View):
 
         @timer
         def download_data(edits, permitted_nodegroupids):
-            '''
+            """
             Get all data as json
             Returns:
             :tuple: Returns all json data in a d tuple
-            '''
+            """
             data = []
 
             for edit in edits:
-                resourceid=edit.resourceinstanceid
+                resourceid = edit.resourceinstanceid
                 if Resource.objects.filter(pk=resourceid).exists():
                     resource = Resource.objects.get(pk=resourceid)
                     # Rather than load_tiles(), we fetch tiles separately and check permitted_nodegroups
@@ -152,14 +155,18 @@ class ChangesView(View):
             'timeElapsed': time_elapsed
         }
 
-        response = {'metadata': metadata, 'results':json_data[0]}
+        response = {"metadata": metadata, "results": json_data[0]}
 
-        return JsonResponse(response, json_dumps_params={'indent': 2})
+        return JsonResponse(response, json_dumps_params={"indent": 2})
+
 
 # download and append all xml thesauri
 class ConceptsExportView(View):
     def get(self, request):
-        conceptids = [str(c.conceptid) for c in modelConcept.objects.filter(nodetype='ConceptScheme')]
+        conceptids = [
+            str(c.conceptid)
+            for c in modelConcept.objects.filter(nodetype="ConceptScheme")
+        ]
         concept_graphs = []
         for conceptid in conceptids:
             print(conceptid)
