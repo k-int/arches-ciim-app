@@ -6,11 +6,13 @@ from arches_ciim_app.views.ciim import ChangesView, ConceptsExportView
 
 urlpatterns = [
     re_path(r"^resource/changes", ChangesView.as_view(), name="ChangesView"),
-    re_path(r"^concept/export", ConceptsExportView.as_view(), name="ConceptsExportView"),    
+    re_path(
+        r"^concept/export", ConceptsExportView.as_view(), name="ConceptsExportView"
+    ),
 ]
 
 # Ensure Arches core urls are superseded by project-level urls
-urlpatterns.append(path('', include('arches.urls')))
+urlpatterns.append(path("", include("arches.urls")))
 
 # Adds URL pattern to serve media files during development
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -3,9 +3,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ("arches_ciim_app", "0001_initial")
-    ]
+    dependencies = [("arches_ciim_app", "0001_initial")]
 
     forward = """
         INSERT INTO plugins (
@@ -21,7 +19,7 @@ class Migration(migrations.Migration):
             '1'
         );
         """
-    
+
     reverse = """
         DELETE FROM plugins where pluginid = 'eb53e958-9ddf-40a9-8acd-da2b27df8340';
         """
