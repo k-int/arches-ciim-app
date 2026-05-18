@@ -36,7 +36,7 @@ SEARCH_COMPONENT_LOCATIONS.append("arches_ciim_app.search_components")
 
 LOCALE_PATHS.insert(0, os.path.join(APP_ROOT, "locale"))
 
-FILE_TYPE_CHECKING = 'strict'
+FILE_TYPE_CHECKING = "strict"
 FILE_TYPES = [
     "bmp",
     "gif",
