@@ -1,6 +1,6 @@
 # Arches CIIM integration
 
-Current version for 7.5.x
+2.0.x is compatible with Arches 8.1.x
 
 ## APIs
 
