@@ -1,16 +1,12 @@
-define([
-    'knockout',
-    'arches',
-    'templates/views/components/plugins/ciim_integration_dashboard.htm'
-], function(ko, arches, CIIMIntegrationDashboardTemplate) {
+import ko from knockout;
+import arches from arches;
+import CIIMIntegrationDashboardTemplate from 'templates/views/components/plugins/ciim_integration_dashboard.htm';
 
-    const CIIMIntegrationDashboardViewModel = function() {
-        const self = this;
+const CIIMIntegrationDashboardViewModel = function() {
+    const self = this;
+};
 
-    };
-
-    return ko.components.register('ciim_integration_dashboard', {
-        viewModel: CIIMIntegrationDashboardViewModel,
-        template: CIIMIntegrationDashboardTemplate
-    });
+export default ko.components.register('ciim_integration_dashboard', {
+    viewModel: CIIMIntegrationDashboardViewModel,
+    template: defaultReportTemplate,
 });
