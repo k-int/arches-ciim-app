@@ -141,6 +141,7 @@ INSTALLED_APPS = (
     "guardian",
     "django_recaptcha",  # was "captcha"
     "pgtrigger",
+    "django_migrate_sql",
     "revproxy",
     "corsheaders",
     "oauth2_provider",
